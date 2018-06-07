@@ -1,0 +1,21 @@
+
+connections:
+	-c connect
+	-l listen
+
+	-a address (required for -c)
+	-p port   (optional)
+	
+		-->allow only unreserved ports
+
+	eg:
+		./exec -c -a "190.90.90.91" -p
+
+NFA design:
+
+	S(connect) -> S1, set up connection
+	S1(address)  -> S3, grab address
+	S3(e| port)  -> S, grab port if provided
+	S(accept ) -> S2, listen for address, accept from address
+	S2(addre)  -> S4, grab address, 
+	S4(port | e) -> S, grab port if provided

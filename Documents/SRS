@@ -1,0 +1,28 @@
+
+project: 
+	tcp/ip daisy chain application
+	
+features: 
+	-multiple connections
+	-data relay
+		+select relay
+			-->group relay	
+	-cache connection info and reload	
+	
+
+
+
+Pseudo SRS:
+	
+	Project implements a sit-in application that's capable of making
+	multiple dynamic connections.
+
+
+Design:
+	Abstract socket (send, recv) library
+	Abstract connections
+		-table
+	Abstract data
+		-provide encryption
+			-->for now do nothing
+

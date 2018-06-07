@@ -1,0 +1,35 @@
+
+Description:
+	connections are abtracted. Since multiple connections can be made,
+	there will be two tables: one for connecting, and one for accepting connections.
+
+Remarks:
+	(CONN) table module should not create connections		
+
+Connection Data Structure:
+	
+	Tuple consisting of the following:
+	
+		type 		: 	CONNECT or ACCEPT
+		address		: 	name resolution
+		port		:	optional
+		signature	:	unique connection identifier, hash value
+
+	Remarks:
+		port:
+			for assigning ports, just maintain 
+			a pointer to the last inserted item 
+			in either table 
+			--should be a global value
+
+Connection Table desgin:
+	
+	Two tables
+	-Connection (active) table
+	-Accepting  (passive) table
+
+
+Flow:
+	Build CONN structures for ACCEPT and CONNECT
+	-->Populate tables
+	

@@ -1,0 +1,14 @@
+
+just build the network connections abstractions and then use one listening connectiont to 
+	generate a thread that accepts/rejects connections
+
+
+accept connection:
+	if in A_table
+
+reject connection:
+	close the file descripter given on accept() call
+
+remarks:
+	ffor the listening thread, look into SIGIO for the thread containing the 
+	listening socket to deliver a SIGNAL for incoming connections

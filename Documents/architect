@@ -1,0 +1,29 @@
+
+
+driver:
+  
+  |
+  |_____>table interface
+	  	-->insert/Populate tables
+  <_____		return (CONN pointer)
+
+  -- & thread listener &&&
+		listen connections:
+		
+		signal main driver		
+		
+		accept 
+  --build connections
+  |
+  |____>table interface, set CONN parameters
+  
+		
+
+  --listen_signhandler:
+	if address in A_table
+		accept
+		table interface, set CONN parameters
+
+	else reject
+		close
+
