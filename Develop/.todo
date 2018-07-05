@@ -12,10 +12,19 @@
             CONN structure works
         </comment>
     </note>
-    <note priority="low" time="1528407318">
+    <note priority="low" time="1528407318" done="1528483800">
         implement memory allocation pool, used for shutdown
+        <comment>
+            done
+        </comment>
     </note>
-    <note priority="verylow" time="1528407580">
-        added table error logging
+    <note priority="high" time="1530750816">
+        build connections
+    </note>
+    <note priority="high" time="1530828957">
+        add memory tracking
+    </note>
+    <note priority="low" time="1528407580">
+        add error logging
     </note>
 </todo>

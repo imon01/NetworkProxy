@@ -1,4 +1,25 @@
+/*
 
+Table.c
+
+
+Structures:
+	Accept connection table
+	Connect connection table
+
+Features:
+	insert
+	delete
+	lookup
+
+Warnings:
+	NO CONCURRENT SUPPORT
+
+
+*/
+
+
+/* Support system module(s) */
 #include "data.h"
 #include "util.h"
 #include "codes.h"
@@ -6,6 +27,12 @@
 #include "config.h"
 
 
+/* Interacting system module(s) */
+#include "network.h"
+
+
+
+/* Other */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -16,13 +43,20 @@
 #include <sys/socket.h>
 
 
+
+/* ************************************************************* */
+/* 					Table variables								 */
+/* ************************************************************* */
+
+
+
 extern int errno;
+static BOOL t_flag = FALSE;
 
 
-/* CONNECTION (Active) Table */
-/* ACCEPT (Passive) Table */
-CONN C_table[C_SIZE];
-CONN A_table[A_SIZE]; //table of accepted connected addresses
+
+CONN C_table[C_SIZE]; /* CONNECTION (Active) Table */
+CONN A_table[A_SIZE]; /* ACCEPT (Passive) Table */
 
 
 /* Pointers to begining & end of C_table */
@@ -33,51 +67,61 @@ void *C_tail;
 void *A_head;
 void *A_tail;
 
-
+/* Number of table entries	*/
 int C_entries;
 int A_entries;
 
 
-/*dummy main.... used for testing table */
-int main( int argc, char * argv[])
-{
-	//char name[32] = "www.google.com";
-	char name[size_32] = "172.217.0.4";
-	char name2[size_32] = "www.wwu.edu";
-	table_init();	
-	interface( CONNECT, name, sizeof(name), 9000);	
-	interface( CONNECT, name2, sizeof(name2), 9000);	
 
-	/*	
-	if( 0 IS 0){ 
-		printf("IS works\n");
-	}
-	if( 1 NOT 0)
-		printf("NOT works\n");
-	if( 1 AND 1)
-		printf("AND works\n");
-	*/	
-	
-	
+
+/* *************************************************************	*/
+/* 					Local  Prototypes								*/
+/* ************************************************************* 	*/
+
+
+
+unsigned long hash(char*);
+
+
+
+
+/* *************************************************************	*/
+/* 					Table Procedures								*/
+/* ************************************************************* 	*/
+
+
+
+BOOL table_check()
+{
+	return t_flag;
 }
 
-int table_init(void)
+BOOL table_init(void)
 {
-	/* allocate all global */
+	if( t_flag )
+	{	
+		perror("table already created");
+		return FALSE;
+	}
 
+	/* allocate all global */
+	t_flag		= TRUE;
 	C_head 		= NULL;
 	C_tail 		= NULL;	
 	A_head 		= NULL;
 	A_tail		= NULL;	
 	C_entries	= 0;
 	A_entries	= 0;
+	
+	return TRUE;
 }
 
 
 //TODO
 /* Checks all parameters and generates CONN structure for insert() */
-int interface( int type, char *name, int n_size, int port )
+RCODE interface( int type, char *name, char *address, int port )
 {
+	/*
 	int 	val			= 0;
 	int 	indexptr 	= 0;	
 	char 	remote_ip[size_256];
@@ -104,34 +148,51 @@ int interface( int type, char *name, int n_size, int port )
 		strncpy( remote_ip, inet_ntoa( s_addr->sin_addr ), sizeof(remote_ip));
 	}
 	free(remote);
+	*/
 
+	int insert_val = 0;	
 	CONN conn = (CONN) u_malloc(sizeof(*conn));
-	conn->type = type;
-	conn->port = port;
-	strncpy( conn->name, name, sizeof(conn->name));
-	strncpy( conn->address, remote_ip, sizeof(conn->address));
-	printf("conn.type = %d\n", (int) conn->type);
-	printf("conn.address = %s\n", conn->address);
-	printf("conn.port = %d\n", conn->port);
 
-	C_insert(conn);
-	u_free(conn);
-	return(EXIT_SUCCESS);
+	if( conn )
+	{
+		conn->type = type;
+		conn->port = port;
+		strncpy( conn->name, name, strlen(conn->name));
+		strncpy( conn->address, address, strlen(conn->address));
+		printf("conn.type = %d\n", (int) conn->type);
+		printf("conn.address = %s\n", conn->address);
+		printf("conn.port = %d\n", conn->port);
+
+	}
+	
+	//C_insert(conn);
+	//	u_free(conn);
+	
+	if( type IS CONNECT)
+		insert_val = C_insert(conn);
+	else
+		insert_val = A_insert(conn);
+
+	if( insert_val == FAILURE )
+		u_free(conn);
+	
+	return insert_val;
 }// End Main
 
 
 
 //TODO
-int  C_insert( void *p){
+static RCODE  C_insert( void *p){
 	printf("insert\n");
 
 	if( C_entries == C_SIZE )
 	{
 		fprintf(stderr, "Connection table size exceeded, connection tuple will be freed");	
+		return FAILURE;	
 	}
 	
 	CONN c = (CONN) p;	
-	printf("conn.port = %d\n", c->port);
+	//printf("conn.port = %d\n", c->port);
 	if( C_head IS NULL )
 	{
 		C_head = &C_table[0];
@@ -154,9 +215,17 @@ int  C_insert( void *p){
 }
 
 
-int  A_insert( void *p){
-	printf("insert\n");
-	CONN c = (CONN) p;	
+static RCODE  A_insert( void *p)
+{
+
+	if( A_entries == A_SIZE )
+	{
+		fprintf(stderr, "Accept table size exceeded, accept tuple will be freed");
+		return FAILURE;
+	}
+
+	CONN c = (CONN) p;
+	
 	if( A_head IS NULL )
 	{
 		A_head = &A_table[0];
@@ -164,19 +233,121 @@ int  A_insert( void *p){
 		printf("C_head set, location: %p\n", A_head);
 		
 		A_table[0] = c;
-		A_tail++;	
+		A_tail	= &C_table[1];	
 	}
-	
+	else
+	{
+		A_tail = c;
+		A_tail++;
+		printf("New Conn added, location: %p\n", A_tail);
+	}
 	return SUCCESS;		
 }
 
 
-int delete( char* address)
+RCODE t_delete(char* address, TYPE type, int *sd)
 {
-	return SUCCESS;
+	RCODE value = FALSE; 
+	size_t 	addr_len = sizeof(address);
+
+	if( !t_flag ) 
+		return FAILURE;
+
+	int	limit		= 0;
+	int* actual		= 0;	
+	CONN* table		 = 0;
+
+	if(type IS CONNECT)
+	{
+		actual 		= &C_entries;	
+		limit 		= C_entries;
+		table 		= C_table;
+	
+	}
+	else
+	{
+		actual 		= &A_entries;
+		limit 		= A_entries;	 
+		table	 	= A_table;
+	}		
+	
+
+
+	for(int i = 0; i < limit; i++)
+	{
+		if( strncmp( table[i]->address, address, addr_len ) IS 0 )
+		{
+			i		= limit;		
+			value 	= SUCCESS; 
+			n_close( table[i]->sd );				
+			u_free( table[i] );
+
+			*actual = (*actual) - 1;	
+			//must close socket descriptor	
+		}
+	}
+	
+
+
+	 
+	return value;
 }
 
 
-int member( char *address ){
-	return SUCCESS;
+RCODE t_lookup(char *address, TYPE type )
+{
+	size_t addr_len	= strlen(address);
+	RCODE value 	= FAILURE;
+	
+	if( !t_flag )
+	{ 
+		return FAILURE;
+	}
+
+	int	limit		= 0;
+	CONN* table		= 0;
+
+	if(type IS CONNECT)
+	{
+		limit 		= C_entries;
+		table 		= C_table;
+	
+	}
+	else
+	{
+		limit 		= A_entries;	 
+		table	 	= A_table;
+	}		
+	
+	for(int i = 0; i < limit; i++)
+	{
+		if( strncmp( table[i]->address, address, addr_len ) IS 0 )
+		{
+			i		= limit;	
+			value 	= SUCCESS; 
+		}
+	}
+	
+	return value; 
 }
+
+
+
+
+//dj2 from www.cse.yorku.ca/~oz/hash.html 
+unsigned long  hash(char* address)
+{
+	int c				= 0;
+	unsigned long hash 	= 5381;
+	
+	while( c = *address++ )
+	{
+		hash =  ( ( hash << 5 ) +  hash) + c; /* hash*33 + c */
+	}
+
+	return hash;
+
+
+}
+
+

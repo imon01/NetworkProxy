@@ -3,7 +3,7 @@
 
 
 #define SUCCESS 0
-#define SIZEFAILURE 1
-#define FAILURE -1
+
+#define SIZE_FAIL -11
 
 #endif

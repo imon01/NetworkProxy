@@ -1,14 +1,20 @@
 #ifndef _TABLE
 #define _TABLE
 
+
+#include "data.h"
+
 /* make table, mem alloc */
 
 /* maintain two pointer for conn stack, head and tai */
-int table_init(void);
-int t_member( char* );
-int C_insert( void* );
-int A_insert( void* );
-int t_delete( char* );
 
-int interface( int, char *, int, int );
+
+
+static RCODE C_insert( void* );
+static RCODE A_insert( void* );
+BOOL table_init(void);
+RCODE t_lookup( char*, TYPE );
+RCODE t_delete( char*, TYPE, int* );
+RCODE interface( int, char *, char*, int );
+
 #endif

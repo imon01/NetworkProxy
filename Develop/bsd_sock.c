@@ -1,26 +1,36 @@
 
 #include "data.h"
 #include "util.h"
-#include "sock.h"
 #include "codes.h"
 #include "config.h"
+#include "bsd_sock.h"
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 
-#include <arpa/inet.h>
-
+#include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 /*A wrapper for socket close, for sake of consistency */
-void close( int* sd )
+int s_close( int* sd )
 {
-	if( close( *sd ) NOT 0)
+	int value = FAILURE;
+	if( close( (int)*sd ) NOT 0)
 	{
 		perror("close");
 	}
+	
+	return (!value);	
+	
 }
 
-char * get_name(char *name)
+char* s_getaddr(char *name)
 {
 	int val = 0;
 	int index = 0;
@@ -32,13 +42,13 @@ char * get_name(char *name)
 	
 	memset(&remote, 0, sizeof( remote ));
 	hints.ai_family = AF_INET;
-	hintss.ai_socktype = SOCK_STREAM;
+	hints.ai_socktype = SOCK_STREAM;
 	
 	val = getaddrinfo(name, NULL, &hints, &remote);
 
 	if( val NOT 0 )
 	{
-		fprint(stderrr, "\invalid dns name: %s\n", name );
+		fprintf(stderr, "\ninvalid dns name: %s\n", name );
 		return NULL;
 	}
 	 
@@ -51,14 +61,14 @@ char * get_name(char *name)
 	freeaddrinfo( remote );	
 	//u_free( remote );
 	
-	return &remote_addr;
+	return remote_addr;
 }
 
 
-int* sock( void *p, char flag, char accept_opt, char* if_name)
+int* s_sock( void *p, char flag, char accept_opt, char* if_name)
 {
 	int sd = FAILURE;
-	int n  = 0;
+	size_t n  = 0;
 	char *addr;	
 	CONN c = (CONN) p;
 	struct sockaddr_in sock;
@@ -70,18 +80,20 @@ int* sock( void *p, char flag, char accept_opt, char* if_name)
 		
 	if( c->type IS CONNECT)
 	{
+		/*
 		*addr = get_addr(c->name);	
 	
 		if( name IS NULL )
 		{
 			return FAILURE;
 		}
+		*/	
+
+		//strncpy( c->address, addr, sizeof(c->addr) );
+		sock.sin_port = htons( (u_short) c->port);
+		memcpy( sock.sin_addr.s_addr, c->address, sizeof(c->address));
 		
-		strncpy( c->addr, addr, sizeof(c->addr) );
-		sock->sin_port = htons( (u_short) c->port);
-		memcopy( sock.sin_addr.s_addr, c->addr, sizeof(c->addr));
-		
-		sd = socket( AF_INET, SOCKET_STREAM, IP );
+		sd = socket( AF_INET, SOCK_STREAM, PF_INET );
 		
 		if( sd <  0 )
 		{
@@ -103,7 +115,7 @@ int* sock( void *p, char flag, char accept_opt, char* if_name)
 		sock.sin_addr.s_addr = INADDR_ANY;
 		sock.sin_port 		= htons( (u_short) c->port);
 		
-		sd = socket( AF_INET, SOCK_STREAM, IP);
+		sd = socket( AF_INET, SOCK_STREAM, 0);
 		
 		if( sd < 0 )
 		{
@@ -111,7 +123,7 @@ int* sock( void *p, char flag, char accept_opt, char* if_name)
 			return FAILURE;
 		}
 		
-		if( setsockopt( sd, SOL_SOCKEt, SO_REUSEADDR, &flag, sizeof(int) ) IS -1 )
+		if( setsockopt( sd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int) ) IS -1 )
 		{
 			perror("setsockopt");
 			return FAILURE;
@@ -129,8 +141,8 @@ int* sock( void *p, char flag, char accept_opt, char* if_name)
 			shutdown( sd, 2 );
 			return FAILURE;
 		}
-	
-	
-	
+	}	
+	//set CONN tuple descriptor	
+	c->sd = sd;		
 	return sd;
 }
