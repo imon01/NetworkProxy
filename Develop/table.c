@@ -151,7 +151,7 @@ RCODE interface( int type, char *name, char *address, int port )
 	*/
 
 	int insert_val = 0;	
-	CONN conn = (CONN) u_malloc(sizeof(*conn));
+	CONN conn = (CONN) u_malloc(sizeof(conn));
 
 	if( conn )
 	{
@@ -199,6 +199,7 @@ static RCODE  C_insert( void *p){
 		C_tail = C_head;
 		printf("C_head set, location: %p\n", C_head);
 		
+		//TODO: correctly copy/store at indexes
 		C_table[0] = c;
 		C_tail = &C_table[1];	
 	}
